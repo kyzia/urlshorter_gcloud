@@ -25,6 +25,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+//import io.vertx.core.json.JsonObject;
+//import io.vertx.ext.asyncsql.PostgreSQLClient;
+//import io.vertx.ext.sql.SQLClient;
+//import io.vertx.ext.sql.SQLConnection;
 
 @RunWith(VertxUnitRunner.class)
 public class ApplicationTest {
@@ -42,6 +46,14 @@ public class ApplicationTest {
   private static void startMetadataServer(TestContext ctx) {
     Application.METADATA_HOST = "localhost";
     Application.METADATA_PORT = 8081;
+
+//    JsonObject postgreSQLClientConfig = new JsonObject().put("host", "34.77.113.51");
+//    postgreSQLClientConfig.put("port","5432");
+//    postgreSQLClientConfig.put("database","myapp");
+//    postgreSQLClientConfig.put("user","postgres");
+//    postgreSQLClientConfig.put("password","qwerty1@");
+//    SQLClient postgreSQLClient = PostgreSQLClient.createShared(vertx, postgreSQLClientConfig);
+
     vertx
         .createHttpServer()
         .requestHandler(
