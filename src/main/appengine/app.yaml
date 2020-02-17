@@ -12,11 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: java11
+#runtime: java11
+runtime: java8
+#runtime: custom
 instance_class: F4
+#env: flex
+
+#automatic_scaling:
+#  min_num_instances: 1
+#  max_num_instances: 2
+
+#handlers:
+#  - url: /.*
+#    script: this field is required, but ignored
+
 # The entry point is necessary to tell Vert.x where to store cached resources extracted from fat jars
 entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar vertx-hello-j11-1.0-jar-with-dependencies.jar '
 #entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar vertx-hello-j11-1.0.jar '
 #beta_settings:
 #  cloud_sql_instances: nifty-memory-268407:europe-west1:mytestex1=tcp:5432
-
+#env_variables:
+#  DB_INSTANCE: /cloudsql/nifty-memory-268407:europe-west1:mytestex1
+#  DB_DATABASE: myapp
+#  DB_USER: postgres
+#  DB_PASSWORD: qwerty1@
+#handlers:
+#  - url: /.*
+handlers:
+  - url: .*
+    script: this field is required, but ignored

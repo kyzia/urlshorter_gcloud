@@ -18,6 +18,7 @@ package com.example.appengine.vertxhello;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 //import io.vertx.core.json.JsonObject;
 //import io.vertx.ext.asyncsql.PostgreSQLClient;
@@ -35,6 +36,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
+import io.vertx.ext.web.handler.BodyHandler;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -48,27 +51,44 @@ public class Application extends AbstractVerticle {
   private SQLClient client;
 
 
+  private static final String CLOUD_SQL_INSTANCE_NAME = System.getenv("DB_INSTANCE");
+  private static final String DB_USER = System.getenv("DB_USER");
+  private static final String DB_PASSWORD = System.getenv("DB_PASSWORD");
+  private static final String DB_NAME = System.getenv("DB_DATABASE");
+  private static final String DB_UNIX_DOMAIN_SOCKET = CLOUD_SQL_INSTANCE_NAME;
+  private static final int DB_PORT = 5432;
+
+
   static String METADATA_HOST = "metadata.google.internal";
-  static int METADATA_PORT = 80;
+  static int METADATA_PORT = 8080;
   WebClient webClient;
 
   @Override
   public void start(Future<Void> startFuture) {
     //webClient = WebClient.create(vertx);
     Router router = Router.router(vertx);
-    logger.severe("teststring2");
+    logger.severe("teststring3");
 
-    JsonObject postgreSQLClientConfig = new JsonObject().put("host", "34.77.113.51");
-    //JsonObject postgreSQLClientConfig = new JsonObject().put("host", "127.0.0.1");
-    postgreSQLClientConfig.put("port",5432);
-    postgreSQLClientConfig.put("database","myapp");
-    postgreSQLClientConfig.put("username","postgres");
-    postgreSQLClientConfig.put("password","qwerty1@");
+    JsonObject postgreSQLClientConfig = new JsonObject();
+    //postgreSQLClientConfig.put("host", "10.99.160.3");
+    postgreSQLClientConfig.put("host", "34.77.113.51");
+    //postgreSQLClientConfig.put("host", "nifty-memory-268407:europe-west1:mytestex1");
+    //postgreSQLClientConfig.put("host", "/cloudsql/nifty-memory-268407:europe-west1:mytestex1/.s.PGSQL.5432");
+    postgreSQLClientConfig.put("port", 5432);
+    postgreSQLClientConfig.put("database", "myapp");
+    postgreSQLClientConfig.put("username", "postgres");
+    postgreSQLClientConfig.put("password", "qwerty1@");
+
     SQLClient client = PostgreSQLClient.createShared(vertx, postgreSQLClientConfig);
 
+ // This body handler will be called for all routes
+    router.route().handler(BodyHandler.create());
     router.route("/hash*").handler(routingContext -> client.getConnection(res -> {
+      logger.severe("router route called add called");
       if (res.failed()) {
+        logger.severe("Cannot connect to sql - connection failed" + res.toString());
         routingContext.fail(res.cause());
+        sendError(400, routingContext.response());
       } else {
         SQLConnection conn = res.result();
 
@@ -82,6 +102,7 @@ public class Application extends AbstractVerticle {
         routingContext.next();
       }
     })).failureHandler(routingContext -> {
+      logger.severe("router route called add called");
       SQLConnection conn = routingContext.get("conn");
       if (conn != null) {
         conn.close(v -> {
@@ -89,63 +110,79 @@ public class Application extends AbstractVerticle {
       }
     });
 
-//    postgreSQLClient.getConnection(res -> {
-//      if (res.succeeded()) {
-//        SQLConnection connection = res.result();
-//        connection.query("SELECT * from urlhash", resq -> {
-//          if (resq.succeeded()) {
-//            // Get the result set
-//            ResultSet resultSet = resq.result();
-//
-//            List<String> columnNames = resultSet.getColumnNames();
-//            List<JsonArray> results = resultSet.getResults();
-//
-//            for (JsonArray row : results) {
-//
-//              String id = row.getString(0);
-//              String hash = row.getString(1);
-//              String url = row.getString(2);
-//              logger.severe("id: " + id + "hash: " + hash + "url: " + url);
-//            }
-//          } else {
-//            logger.severe("Cannot perform SQL req");
-//          }
-//        });
-//        // Got a connection
-//
-//      } else {
-//        logger.severe("Cannot get SQL connection");
-//        // Failed to get connection - deal with it
-//      }
-//    });
-
-    // Get the PORT environment variable for the server object to listen on
-    int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "80"));
-
-
+    router.post("/hashposttest").handler(this::handleTestProduct);
     router.get("/hashget/:hashID").handler(this::handleGetHash);
     //router.get("/").handler(this::handleGetHash);
-    //router.post("/products").handler(that::handleAddProduct);
-    router.route("/test").handler(routingContext -> {
+    router.post("/hashpost").handler(this::handleAddProduct);
+    router.get("/test").handler(routingContext -> {
       //LOGGER.error("teststring");
       logger.info("Logging INFO with java.util.logging");
       logger.severe("Logging ERROR with java.util.logging");
       routingContext.response().putHeader("content-type", "text/html").end("Hello World!");
     });
 
-    router.route("/").handler(routingContext -> {
-      //LOGGER.error("teststring");
+    router.get("/").handler(routingContext -> {
+
+      String posthtml = "<!DOCTYPE html>\n" +
+              "<html>\n" +
+              "<body>\n" +
+              //"<form action=\"/hashpost\" method=\"POST\" enctype=\"multipart/form-data\">\n" +
+              //"<form action=\"/hashpost\" method=\"POST\" enctype=\"application/x-www-form-urlencoded\">\n" +
+              "<form action=\"/hashpost\" method=\"post\">" +
+              "<label for=\"url\">Url</label><br>" +
+              "  <input id=\"url\" name=\"url\" value=\"yandex.ru\">\n" +
+              "  <input type=\"submit\" value=\"Submit\">\n" +
+              "</form>\n" +
+              "</body>\n" +
+              "</html>";
+
       logger.info("Logging INFO with java.util.logging");
       logger.severe("Logging ERROR with java.util.logging");
-      routingContext.response().putHeader("content-type", "text/html").end("Hello World!");
+      routingContext.response().putHeader("content-type", "text/html").end(posthtml);
     });
 //    router.route().handler(this::handleDefault);
-
+    int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "80"));
     vertx.createHttpServer().requestHandler(router).listen(port, ar -> startFuture.handle(ar.mapEmpty()));
   }
 
   private void sendError(int statusCode, HttpServerResponse response) {
     response.setStatusCode(statusCode).end();
+  }
+
+  private void handleTestProduct(RoutingContext routingContext) {
+    HttpServerResponse response = routingContext.response();
+
+    String url = routingContext.request().getFormAttribute("url");
+    if ((!url.startsWith("http://") || !url.startsWith("https://"))) {
+      url = "http://" + url;
+    };
+    logger.severe("url: " + url);
+    response.putHeader("content-type", "text/html").end("Use url: "+ "http://nifty-memory-268407.appspot.com/hashget/");
+  }
+
+  private void handleAddProduct(RoutingContext routingContext) {
+    logger.severe("handle add called");
+    HttpServerResponse response = routingContext.response();
+
+    SQLConnection conn = routingContext.get("conn");
+    String url = routingContext.request().getFormAttribute("url");
+    if ((!url.startsWith("http://") || !url.startsWith("https://"))) {
+      url = "http://" + url;
+    };
+    logger.severe("url: " + url);
+    String hash = RandomStringUtils.randomAlphanumeric(9).toUpperCase();
+    //logger.severe("post data" + url + "hash " + hash);
+
+    conn.updateWithParams("INSERT INTO urlhash (url, hash) VALUES (?, ?)",
+            new JsonArray().add(url).add(hash), query -> {
+              if (query.failed()) {
+                sendError(500, response);
+              } else {
+                //routingContext.response()
+                response.putHeader("content-type", "text/html").end("Use url: "+ "http://nifty-memory-268407.appspot.com/hashget/" + hash);
+              }
+            });
+
   }
 
   private void handleGetHash(RoutingContext routingContext) {
@@ -174,6 +211,7 @@ public class Application extends AbstractVerticle {
   }
 
   private void handleDefault(RoutingContext routingContext) {
+    logger.severe("DEFAULT handle accured");
     webClient
         .get(METADATA_PORT, METADATA_HOST, "/computeMetadata/v1/project/project-id")
         .putHeader("Metadata-Flavor", "Google")
