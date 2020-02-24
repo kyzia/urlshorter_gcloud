@@ -44,8 +44,8 @@ public class ApplicationTest {
 
   // Start a mock metadata server
   private static void startMetadataServer(TestContext ctx) {
-    Application.METADATA_HOST = "localhost";
-    Application.METADATA_PORT = 8081;
+    //Application.METADATA_HOST = "localhost";
+    //Application.METADATA_PORT = 8081;
 
 //    JsonObject postgreSQLClientConfig = new JsonObject().put("host", "34.77.113.51");
 //    postgreSQLClientConfig.put("port","5432");
@@ -58,9 +58,9 @@ public class ApplicationTest {
         .createHttpServer()
         .requestHandler(
             req -> {
-              req.response().end("this-is-your-project");
+              req.response().end("Hello World!");
             })
-        .listen(8081, ctx.asyncAssertSuccess());
+        .listen(80, ctx.asyncAssertSuccess());
   }
 
   @AfterClass

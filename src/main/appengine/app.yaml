@@ -13,7 +13,7 @@
 # limitations under the License.
 
 #runtime: java11
-runtime: java8
+runtime: java11
 #runtime: custom
 instance_class: F4
 #env: flex
@@ -27,7 +27,8 @@ instance_class: F4
 #    script: this field is required, but ignored
 
 # The entry point is necessary to tell Vert.x where to store cached resources extracted from fat jars
-entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar vertx-hello-j11-1.0-jar-with-dependencies.jar '
+#entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar vertx-hello-j11-1.0-jar-with-dependencies.jar'
+entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar target.jar'
 #entrypoint: 'java -Dvertx.cacheDirBase=/tmp -jar vertx-hello-j11-1.0.jar '
 #beta_settings:
 #  cloud_sql_instances: nifty-memory-268407:europe-west1:mytestex1=tcp:5432
